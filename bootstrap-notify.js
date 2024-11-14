@@ -55,12 +55,12 @@
 
 	String.format = function () {
 		var args = arguments;
-        var str = arguments[0];
-        return str.replace(/(\{\{\d\}\}|\{\d\})/g, function (str) {
-            if (str.substring(0, 2) === "{{") return str;
-            var num = parseInt(str.match(/\d/)[0]);
-            return args[num + 1];
-        });
+		var str = arguments[0];
+		return str.replace(/(\{\{\d\}\}|\{\d\})/g, function (str) {
+			if (str.substring(0, 2) === "{{") return str;
+			var num = parseInt(str.match(/\d/)[0]);
+			return args[num + 1];
+		});
 	};
 
 	function isDuplicateNotification(notification) {
@@ -196,6 +196,9 @@
 			var content = this.settings.content;
 			this.$ele = $(String.format(this.settings.template, this.settings.type, content.title, content.message, content.url, content.target));
 			this.$ele.attr('data-notify-position', this.settings.placement.from + '-' + this.settings.placement.align);
+			if (content.title.length == 0) {
+				this.$ele.find('[data-notify="title"]').css('display', 'none');
+			}
 			if (!this.settings.allow_dismiss) {
 				this.$ele.find('[data-notify="dismiss"]').css('display', 'none');
 			}
@@ -321,7 +324,7 @@
 
 			if (this.settings.delay > 0) {
 				self.$ele.data('notify-delay', self.settings.delay);
-				var timer = setInterval(function () {
+				this.timerInterval = setInterval(function () {
 					var delay = parseInt(self.$ele.data('notify-delay')) - self.settings.timer;
 					if ((self.$ele.data('data-hover') === 'false' && self.settings.mouse_over === "pause") || self.settings.mouse_over != "pause") {
 						var percent = ((self.settings.delay - delay) / self.settings.delay) * 100;
@@ -329,13 +332,14 @@
 						self.$ele.find('[data-notify="progressbar"] > div').attr('aria-valuenow', percent).css('width', percent + '%');
 					}
 					if (delay <= -(self.settings.timer)) {
-						clearInterval(timer);
+					
 						self.close();
 					}
 				}, self.settings.timer);
 			}
 		},
 		close: function () {
+			clearInterval(this.timerInterval);
 			var self = this,
 				posX = parseInt(this.$ele.css(this.settings.placement.from)),
 				hasAnimation = false;
@@ -359,8 +363,8 @@
 			setTimeout(function () {
 				if (!hasAnimation) {
 					self.$ele.remove();
-					if ($.isFunction(self.settings.onClosed)) {
-						self.settings.onClosed.call(this);
+					if (self.settings.onClosed) {
+						self.settings.onClosed(self.$ele);
 					}
 				}
 			}, 600);
@@ -413,5 +417,3 @@
 
 
 }));
-
-
